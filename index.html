@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="referrer" content="no-referrer">
+    <title>Local Secret Matches</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #1e1e24;
+            --box-bg: #2b2b36;
+            --primary: #f97316; /* Orange theme like the image */
+            --text-light: #f3f4f6;
+            --text-muted: #9ca3af;
+            --success: #22c55e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { background: var(--bg-dark); color: var(--text-light); padding: 15px; }
+
+        .container { max-width: 500px; margin: 0 auto; background: var(--box-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); padding-bottom: 20px; }
+
+        /* Profile Header */
+        .profile-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .name-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+        .name { font-size: 22px; font-weight: 900; color: #fff; }
+        .likes { background: #3b82f6; color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
+        
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; color: var(--text-muted); }
+        .info-grid span { color: #fff; font-weight: 700; }
+
+        /* Video Section (New Video) */
+        .video-wrapper { position: relative; width: 100%; height: 350px; background: #000; overflow: hidden; }
+        .main-video { width: 100%; height: 100%; object-fit: cover; filter: blur(12px) brightness(0.7); transform: scale(1.1); transition: 0.3s; }
+        
+        .play-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2;
+        }
+        .play-btn {
+            background: var(--primary); color: #fff; border: none; padding: 12px 25px; border-radius: 30px;
+            font-size: 16px; font-weight: 900; text-transform: uppercase; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4); animation: pulse 1.5s infinite;
+        }
+        .live-tag { position: absolute; top: 15px; left: 15px; background: #ef4444; color: #fff; font-size: 12px; font-weight: 900; padding: 4px 8px; border-radius: 4px; z-index: 3; letter-spacing: 1px; }
+
+        /* Availability Calendar */
+        .calendar-section { padding: 20px; background: rgba(0,0,0,0.2); }
+        .section-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: #fff; }
+        .days-grid { display: flex; justify-content: space-between; text-align: center; font-size: 11px; color: #6b7280; }
+        .day-col { display: flex; flex-direction: column; gap: 5px; }
+        .day-name { font-weight: 700; margin-bottom: 5px; }
+        .day-col.active { color: var(--success); }
+        .day-col.active .day-name { font-size: 13px; }
+        .day-col.active .time-slot { color: var(--text-light); }
+        
+        /* Bio Section */
+        .bio-section { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .bio-text { font-size: 14px; line-height: 1.6; color: #d1d5db; margin-bottom: 15px; }
+        .highlight-text { color: var(--primary); font-weight: bold; }
+
+        /* Fake Comments Section */
+        .comments-section { padding: 20px; }
+        .comment { display: flex; gap: 12px; margin-bottom: 15px; }
+        .c-avatar { width: 35px; height: 35px; background: #4b5563; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; }
+        .c-body { flex: 1; }
+        .c-name { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 3px; display: flex; justify-content: space-between; }
+        .c-time { font-size: 11px; color: #6b7280; font-weight: normal; }
+        .c-text { font-size: 13px; color: #9ca3af; }
+
+        /* Urgency Popup Modal (The Mastermind Trap) */
+        #urgency-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            z-index: 9999; display: none; justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-content {
+            background: #fff; color: #000; width: 100%; max-width: 380px;
+            border-radius: 20px; padding: 30px 20px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: scale(0.9); animation: popIn 0.3s forwards;
+        }
+        .m-title { color: #0ea5e9; font-size: 24px; font-weight: 900; margin-bottom: 10px; }
+        .m-desc { font-size: 15px; color: #4b5563; margin-bottom: 20px; font-weight: 500; }
+        
+        .timer-box { display: flex; justify-content: center; gap: 8px; margin-bottom: 25px; }
+        .digit { background: #e5e7eb; padding: 10px 15px; border-radius: 8px; font-size: 28px; font-weight: 900; color: #374151; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+        .colon { font-size: 28px; font-weight: 900; color: #374151; display: flex; align-items: center; }
+
+        .btn-ok {
+            background: linear-gradient(to bottom, #d97706, #92400e); color: #fff;
+            width: 100%; padding: 15px; border: none; border-radius: 30px;
+            font-size: 18px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 15px rgba(217, 119, 6, 0.4);
+        }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes popIn { to { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="profile-header">
+            <div class="name-row">
+                <div class="name">Private Partner 🟢</div>
+                <div class="likes" onclick="triggerPopup()">1.5k Likes</div>
+            </div>
+            <div class="info-grid">
+                <div>Age: <span>24 Years old</span></div>
+                <div>Location: <span>Nearby You</span></div>
+            </div>
+        </div>
+
+        <div class="video-wrapper">
+            <div class="live-tag">🔴 LIVE</div>
+            <video class="main-video" id="bg-vid" autoplay loop muted playsinline>
+                <source src="https://github.com/abir84095-cyber/newc/raw/refs/heads/main/1.mp4" type="video/mp4">
+            </video>
+            <div class="play-overlay">
+                <button class="play-btn" onclick="triggerPopup()">🔓 UNLOCK VIDEO & CHAT</button>
+            </div>
+        </div>
+
+        <div class="calendar-section">
+            <div class="section-title">Availability:</div>
+            <div class="days-grid">
+                <div class="day-col"><div class="day-name">Mon</div><div class="time-slot">Evening</div></div>
+                <div class="day-col active"><div class="day-name">Today</div><div class="time-slot">Morning</div><div class="time-slot">Evening</div></div>
+                <div class="day-col"><div class="day-name">Wed</div><div class="time-slot">Afternoon</div></div>
+                <div class="day-col"><div class="day-name">Thu</div><div class="time-slot">Evening</div></div>
+                <div class="day-col"><div class="day-name">Fri</div><div class="time-slot">Night</div></div>
+            </div>
+        </div>
+
+        <div class="bio-section">
+            <div class="section-title">Writes:</div>
+            <p class="bio-text">I have a nice apartment and I am happy with my life, but I miss physical closeness. I just want a contact especially for me, without interruption.</p>
+            <p class="bio-text">I want you to create an account, and prove that you are real. Then we will talk on video call, and plan to meet. <br><br><span class="highlight-text">No cc, no money required, just correctly verify email.</span></p>
+        </div>
+
+        <div class="comments-section">
+            <div class="section-title" style="color: #6b7280;">1537 people like this</div>
+            
+            <div class="comment">
+                <div class="c-avatar" style="background: #8b5cf6;">A</div>
+                <div class="c-body">
+                    <div class="c-name">Albert_69 <span class="c-time">Yesterday</span></div>
+                    <div class="c-text">Cool site! I recommend it to everyone! The verification was instant.</div>
+                </div>
+            </div>
+            
+            <div class="comment">
+                <div class="c-avatar" style="background: #10b981;">L</div>
+                <div class="c-body">
+                    <div class="c-name">Lucky_Boy <span class="c-time">Just now</span></div>
+                    <div class="c-text">For those who are tired of Tinder. Everything is much easier and cooler here.</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="urgency-modal">
+        <div class="modal-content">
+            <div class="m-title">ATTENTION!</div>
+            <div class="m-desc">Free VIP registration is going to end in:</div>
+            
+            <div class="timer-box">
+                <div class="digit" id="m1">0</div>
+                <div class="digit" id="m2">4</div>
+                <div class="colon">:</div>
+                <div class="digit" id="s1">4</div>
+                <div class="digit" id="s2">1</div>
+            </div>
+
+            <button class="btn-ok" onclick="window.location.href='https://trk.mitegirl.store/s/6F4UUGPNA3?p=123'">
+                OK, VERIFY NOW
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let modalShown = false;
+
+        // ৫ সেকেন্ড পর অটোমেটিক পপআপ আসবে
+        setTimeout(() => {
+            if(!modalShown) triggerPopup();
+        }, 5000);
+
+        function triggerPopup() {
+            modalShown = true;
+            document.getElementById('urgency-modal').style.display = 'flex';
+            startTimer();
+        }
+
+        // 04:41 থেকে টাইমার কমানোর স্ক্রিপ্ট
+        function startTimer() {
+            let totalSeconds = 4 * 60 + 41; // 4 mins 41 secs
+            
+            let timerInterval = setInterval(() => {
+                if(totalSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    return;
+                }
+                totalSeconds--;
+                
+                let m = Math.floor(totalSeconds / 60);
+                let s = totalSeconds % 60;
+                
+                let mStr = m.toString().padStart(2, '0');
+                let sStr = s.toString().padStart(2, '0');
+
+                document.getElementById('m1').innerText = mStr[0];
+                document.getElementById('m2').innerText = mStr[1];
+                document.getElementById('s1').innerText = sStr[0];
+                document.getElementById('s2').innerText = sStr[1];
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
