@@ -4,90 +4,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="no-referrer">
-    <title>Private Local Match</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <title>Live Video Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #121214;
-            --box-bg: #1c1c22;
-            --primary: #00a8ff; /* Theme matched with popup */
-            --orange-btn: linear-gradient(180deg, #f59e0b, #d97706);
-            --text-light: #f3f4f6;
-            --text-muted: #9ca3af;
-            --success: #10b981;
+            --bg-main: #0f111a;
+            --accent: #ff2a5f;
+            --accent-glow: rgba(255, 42, 95, 0.4);
+            --text-main: #e2e8f0;
+            --box-bg: #1a1d29;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
-        body { background: var(--bg-dark); color: var(--text-light); padding: 10px; display: flex; justify-content: center; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Nunito', sans-serif; }
+        body { background: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow-x: hidden; }
 
-        .container { 
-            width: 100%; max-width: 480px; background: var(--box-bg); 
-            border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.8); 
-            position: relative;
+        /* Main Content Container */
+        .content-box {
+            background: var(--box-bg); max-width: 600px; width: 100%; padding: 35px 25px;
+            border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.5);
+            text-align: center; border: 1px solid rgba(255,255,255,0.05);
+            z-index: 10; position: relative;
         }
 
-        /* App-like Header */
-        .app-header {
-            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2);
-        }
-        .user-info { display: flex; align-items: center; gap: 10px; }
-        .green-dot { width: 10px; height: 10px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success); animation: blink 1.5s infinite; }
-        .name { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: 0.5px; }
-        .distance { font-size: 12px; font-weight: 600; color: var(--primary); background: rgba(0, 168, 255, 0.1); padding: 4px 8px; border-radius: 12px; }
+        .headline { font-size: 24px; font-weight: 900; color: #fff; line-height: 1.3; margin-bottom: 20px; text-transform: capitalize; }
+        .headline span { color: var(--accent); }
+        .description { font-size: 15px; color: #94a3b8; line-height: 1.7; margin-bottom: 30px; font-weight: 400; }
 
-        /* Video Section (Extreme Blur) */
-        .video-wrapper { 
-            position: relative; width: 100%; height: 380px; background: #000; overflow: hidden; cursor: pointer;
+        .start-btn {
+            background: linear-gradient(45deg, #ff2a5f, #ff7e40); color: #fff;
+            border: none; padding: 16px 35px; border-radius: 40px; font-size: 18px; font-weight: 900;
+            cursor: pointer; box-shadow: 0 10px 25px var(--accent-glow);
+            text-transform: uppercase; letter-spacing: 1px; transition: transform 0.2s;
+            width: 100%; max-width: 300px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 10px;
         }
-        /* 🔥 ব্লার অনেক বাড়িয়ে দেওয়া হয়েছে */
-        .main-video { 
-            width: 100%; height: 100%; object-fit: cover; 
-            filter: blur(28px) brightness(0.6); 
-            transform: scale(1.15); 
+        .start-btn:active { transform: scale(0.95); }
+
+        /* Searching Radar Screen */
+        .radar-screen { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0; }
+        .radar {
+            width: 100px; height: 100px; border-radius: 50%;
+            border: 3px solid var(--accent); position: relative;
+            box-shadow: 0 0 20px var(--accent-glow); margin-bottom: 20px;
         }
+        .radar::after {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            width: 50%; height: 2px; background: var(--accent);
+            transform-origin: 0 50%; animation: scan 1.5s linear infinite;
+        }
+        .radar-text { font-size: 16px; font-weight: 700; color: var(--accent); animation: pulse 1s infinite; }
+
+        /* Incoming Call UI */
+        .call-screen { display: none; flex-direction: column; align-items: center; padding: 20px 0; }
+        .caller-avatar {
+            width: 110px; height: 110px; border-radius: 50%; background: #2d3748;
+            border: 4px solid #fff; box-shadow: 0 0 30px rgba(255,255,255,0.2);
+            margin-bottom: 15px; position: relative; overflow: hidden;
+        }
+        /* Fake blurred girl image for caller ID */
+        .caller-avatar img { width: 100%; height: 100%; object-fit: cover; filter: blur(3px); }
         
-        .play-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2;
-            background: radial-gradient(circle, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%);
-        }
-        .unlock-btn {
-            background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255,255,255,0.5);
-            color: #fff; padding: 14px 28px; border-radius: 30px;
-            font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
-            backdrop-filter: blur(5px); box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            animation: pulse-border 2s infinite; display: flex; align-items: center; gap: 8px;
-        }
-        .live-tag { 
-            position: absolute; top: 15px; left: 15px; background: rgba(239, 68, 68, 0.9); 
-            color: #fff; font-size: 11px; font-weight: 900; padding: 5px 10px; border-radius: 6px; 
-            z-index: 3; letter-spacing: 1px; display: flex; align-items: center; gap: 5px; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-        }
-
-        /* Fake Live Interaction */
-        .live-action-bar {
-            padding: 10px 20px; background: rgba(0,0,0,0.4); display: flex; align-items: center; gap: 10px;
-            font-size: 13px; color: var(--text-muted); font-weight: 600;
-        }
-        .typing-indicator { display: none; color: var(--success); font-style: italic; }
-
-        /* Trust & Social Proof Sections */
-        .content-section { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .section-title { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+        .caller-name { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 5px; }
+        .caller-status { font-size: 14px; color: #10b981; margin-bottom: 30px; font-weight: 700; }
         
-        .bio-text { font-size: 14px; line-height: 1.6; color: #d1d5db; margin-bottom: 15px; }
-        .highlight-text { color: var(--primary); font-weight: 800; }
+        .call-actions { display: flex; gap: 20px; }
+        .btn-answer { background: #10b981; color: #fff; width: 65px; height: 65px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); animation: shake 1s infinite; }
+        .btn-decline { background: #ef4444; color: #fff; width: 65px; height: 65px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; opacity: 0.7; }
 
-        .comments-list { display: flex; flex-direction: column; gap: 15px; }
-        .comment { display: flex; gap: 12px; }
-        .c-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: 800; font-size: 15px; color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-        .c-body { flex: 1; background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 0 12px 12px 12px; }
-        .c-name { font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 4px; display: flex; justify-content: space-between; }
-        .c-time { font-size: 11px; color: #6b7280; font-weight: 600; }
-        .c-text { font-size: 13px; color: #aaa; line-height: 1.4; }
-
-        /* 🔥 MASTERMIND URGENCY MODAL (Hoboho Image er moto) */
+        /* Fullscreen Blurred Video (Hidden initially) */
+        .video-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 50; background: #000; display: none;
+        }
+        .main-video { width: 100%; height: 100%; object-fit: cover; filter: blur(20px) brightness(0.6); transform: scale(1.1); }
+        
+        /* Urgency Popup */
         #urgency-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
@@ -95,107 +85,70 @@
         }
         .modal-content {
             background: #ffffff; color: #000; width: 100%; max-width: 360px;
-            border-radius: 24px; padding: 35px 25px; text-align: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.6); 
-            transform: scale(0.9); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            border-radius: 20px; padding: 35px 25px; text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
         }
-        .m-title { color: #00a8ff; font-size: 26px; font-weight: 900; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
-        .m-desc { font-size: 15px; color: #4b5563; margin-bottom: 25px; font-weight: 600; }
-        
+        .m-title { color: #0ea5e9; font-size: 24px; font-weight: 900; margin-bottom: 12px; }
+        .m-desc { font-size: 15px; color: #4b5563; margin-bottom: 25px; font-weight: 700; }
         .timer-box { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
-        .digit { 
-            background: #cbd5e1; padding: 12px 16px; border-radius: 10px; 
-            font-size: 30px; font-weight: 900; color: #fff; 
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.1);
-        }
-        .colon { font-size: 30px; font-weight: 900; color: #94a3b8; display: flex; align-items: center; }
-
+        .digit { background: #e2e8f0; padding: 10px 15px; border-radius: 8px; font-size: 28px; font-weight: 900; color: #334155; }
+        .colon { font-size: 28px; font-weight: 900; color: #94a3b8; display: flex; align-items: center; }
         .btn-ok {
-            background: var(--orange-btn); color: #fff;
-            width: 100%; padding: 16px; border: none; border-radius: 30px;
-            font-size: 18px; font-weight: 900; cursor: pointer; 
-            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4); text-transform: uppercase;
-            transition: 0.2s;
+            background: linear-gradient(to bottom, #d97706, #92400e); color: #fff;
+            width: 100%; padding: 15px; border: none; border-radius: 30px;
+            font-size: 18px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 20px rgba(217, 119, 6, 0.4);
         }
-        .btn-ok:active { transform: scale(0.95); }
 
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); } 70% { box-shadow: 0 0 0 15px rgba(255,255,255,0); } 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); } }
-        @keyframes popIn { to { transform: scale(1); } }
+        @keyframes scan { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px) rotate(-5deg); } 75% { transform: translateX(5px) rotate(5deg); } }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <!-- Main Content Phase 1 -->
+    <div class="content-box" id="phase-1">
+        <h1 class="headline">Sex Video Chat – Live On Your Mobile! Chat With Random Adult Girls In <span>Private Rooms</span></h1>
         
-        <!-- App Header (No Age, Just Status & Distance) -->
-        <div class="app-header">
-            <div class="user-info">
-                <div class="green-dot"></div>
-                <div class="name">Guest_F92</div>
-            </div>
-            <div class="distance">📍 1.2 mi away</div>
-        </div>
+        <p class="description">Looking for a way to enjoy sexy video calls anytime, anywhere? With Arousr, you can connect instantly with real women for private 1 on 1 sex call sessions, no matter where you are. Whether you're on mobile, tablet, or desktop, our platform makes it easy to meet sexy girls ready for fun, flirtation, and erotic conversation in our secure chat rooms.</p>
+        
+        <button class="start-btn" onclick="startRadar()">
+            🎥 Start Private Chat
+        </button>
+    </div>
 
-        <!-- Video Section -->
-        <div class="video-wrapper" onclick="triggerPopup()">
-            <div class="live-tag"><div class="green-dot" style="background:#fff; box-shadow:none; width:8px; height:8px;"></div> LIVE</div>
-            
-            <!-- আপনার দেওয়া ভিডিও (অতিরিক্ত ব্লার করা) -->
-            <video class="main-video" id="bg-vid" autoplay loop muted playsinline>
-                <source src="https://github.com/abir84095-cyber/newc/raw/refs/heads/main/1.mp4" type="video/mp4">
-            </video>
-            
-            <div class="play-overlay">
-                <button class="unlock-btn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    Tap to Unblur
-                </button>
-            </div>
-        </div>
+    <!-- Radar Phase 2 -->
+    <div class="content-box radar-screen" id="phase-2">
+        <div class="radar"></div>
+        <div class="radar-text">Searching for girls nearby...</div>
+    </div>
 
-        <!-- Fake Live Action Bar -->
-        <div class="live-action-bar">
-            <span>👁 2 viewers</span>
-            <span style="margin: 0 10px;">|</span>
-            <span class="typing-indicator" id="typing">Guest_F92 is typing...</span>
+    <!-- Incoming Call Phase 3 -->
+    <div class="content-box call-screen" id="phase-3">
+        <div class="caller-avatar">
+            <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=200&q=80" alt="Caller">
         </div>
-
-        <!-- Bio Section -->
-        <div class="content-section">
-            <p class="bio-text">I have a nice apartment and I am happy with my life, but I miss physical closeness. I just want a contact especially for me, without interruption.</p>
-            <p class="bio-text">Prove that you are real to unlock my camera. Then we will talk on private video, and plan to meet. <br><br><span class="highlight-text">✓ No Credit Card & No Money Required. Just verify your email (Free).</span></p>
+        <div class="caller-name">Guest_F92</div>
+        <div class="caller-status">Incoming Video Call...</div>
+        
+        <div class="call-actions">
+            <button class="btn-decline" onclick="startRadar()">✖</button>
+            <button class="btn-answer" onclick="answerCall()">📞</button>
         </div>
+    </div>
 
-        <!-- Comments Section -->
-        <div class="content-section">
-            <div class="section-title">1537 people like this</div>
-            <div class="comments-list">
-                <div class="comment">
-                    <div class="c-avatar" style="background: linear-gradient(45deg, #8b5cf6, #d946ef);">A</div>
-                    <div class="c-body">
-                        <div class="c-name">Albert_69 <span class="c-time">Yesterday at 08:13</span></div>
-                        <div class="c-text">Cool site! I recommend it to everyone! The live stream is amazing.</div>
-                    </div>
-                </div>
-                <div class="comment">
-                    <div class="c-avatar" style="background: linear-gradient(45deg, #10b981, #3b82f6);">L</div>
-                    <div class="c-body">
-                        <div class="c-name">Lucky <span class="c-time">Just now</span></div>
-                        <div class="c-text">For those who are tired of Tinder. Everything is much easier and cooler.</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+    <!-- Blurred Video Container Phase 4 -->
+    <div class="video-container" id="phase-4">
+        <video class="main-video" id="bg-vid" autoplay loop muted playsinline>
+            <source src="https://github.com/abir84095-cyber/newc/raw/refs/heads/main/1.mp4" type="video/mp4">
+        </video>
     </div>
 
     <!-- Urgency Popup Modal (The Ultimate Trap) -->
     <div id="urgency-modal">
         <div class="modal-content">
             <div class="m-title">ATTENTION!</div>
-            <div class="m-desc">Free registration is going to end in:</div>
+            <div class="m-desc">Free VIP registration is going to end in:</div>
             
             <div class="timer-box">
                 <div class="digit" id="m1">0</div>
@@ -207,46 +160,44 @@
 
             <!-- আপনার CPA অফার লিংক -->
             <button class="btn-ok" onclick="window.location.href='https://trk.mitegirl.store/s/6F4UUGPNA3?p=123'">
-                OK
+                OK, VERIFY NOW
             </button>
         </div>
     </div>
 
     <script>
-        let modalShown = false;
+        function startRadar() {
+            document.getElementById('phase-1').style.display = 'none';
+            document.getElementById('phase-3').style.display = 'none';
+            document.getElementById('phase-2').style.display = 'flex';
 
-        // রিয়েলিস্টিক টাইপিং ইফেক্ট (২ সেকেন্ড পর শুরু হবে)
-        setTimeout(() => {
-            document.getElementById('typing').style.display = 'inline-block';
-        }, 2000);
-
-        // ৫.৫ সেকেন্ড পর অটোমেটিক পপআপ আসবে (বা ইউজার ক্লিক করলে সাথে সাথে আসবে)
-        setTimeout(() => {
-            if(!modalShown) triggerPopup();
-        }, 5500);
-
-        function triggerPopup() {
-            if(modalShown) return;
-            modalShown = true;
-            document.getElementById('typing').style.display = 'none';
-            document.getElementById('urgency-modal').style.display = 'flex';
-            startTimer();
+            // ৩ সেকেন্ড রাডার ঘুরবে, তারপর কল আসবে
+            setTimeout(() => {
+                document.getElementById('phase-2').style.display = 'none';
+                document.getElementById('phase-3').style.display = 'flex';
+                // ইনকামিং কলের হালকা ভাইব্রেশন (মোবাইল ডিভাইসের জন্য)
+                if (navigator.vibrate) navigator.vibrate([500, 500, 500]);
+            }, 3000);
         }
 
-        // 04:41 থেকে টাইমার কমানোর স্ক্রিপ্ট
+        function answerCall() {
+            document.getElementById('phase-3').style.display = 'none';
+            document.getElementById('phase-4').style.display = 'block';
+
+            // কল রিসিভ করার ১.৫ সেকেন্ড পর ভেরিফিকেশন পপআপ আসবে
+            setTimeout(() => {
+                document.getElementById('urgency-modal').style.display = 'flex';
+                startTimer();
+            }, 1500);
+        }
+
         function startTimer() {
             let totalSeconds = 4 * 60 + 41; // 4 mins 41 secs
-            
             let timerInterval = setInterval(() => {
-                if(totalSeconds <= 0) {
-                    clearInterval(timerInterval);
-                    return;
-                }
+                if(totalSeconds <= 0) { clearInterval(timerInterval); return; }
                 totalSeconds--;
-                
                 let m = Math.floor(totalSeconds / 60);
                 let s = totalSeconds % 60;
-                
                 let mStr = m.toString().padStart(2, '0');
                 let sStr = s.toString().padStart(2, '0');
 
