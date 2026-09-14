@@ -4,208 +4,348 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="no-referrer">
-    <title>Live Video Chat</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>Live Private Match & Video Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #0f111a;
-            --accent: #ff2a5f;
-            --accent-glow: rgba(255, 42, 95, 0.4);
-            --text-main: #e2e8f0;
-            --box-bg: #1a1d29;
+            --bg-dark: #0a051b;
+            --card-bg: rgba(23, 15, 48, 0.75);
+            --neon-pink: #ff007f;
+            --neon-purple: #7928ca;
+            --neon-cyan: #00f2fe;
+            --neon-green: #00ff87;
+            --gradient-main: linear-gradient(135deg, #ff007f 0%, #7928ca 50%, #00f2fe 100%);
+            --btn-glow: linear-gradient(90deg, #ff007f, #7928ca, #00f2fe);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Nunito', sans-serif; }
-        body { background: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; overflow-x: hidden; }
-
-        /* Main Content Container */
-        .content-box {
-            background: var(--box-bg); max-width: 600px; width: 100%; padding: 35px 25px;
-            border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.5);
-            text-align: center; border: 1px solid rgba(255,255,255,0.05);
-            z-index: 10; position: relative;
-        }
-
-        .headline { font-size: 24px; font-weight: 900; color: #fff; line-height: 1.3; margin-bottom: 20px; text-transform: capitalize; }
-        .headline span { color: var(--accent); }
-        .description { font-size: 15px; color: #94a3b8; line-height: 1.7; margin-bottom: 30px; font-weight: 400; }
-
-        .start-btn {
-            background: linear-gradient(45deg, #ff2a5f, #ff7e40); color: #fff;
-            border: none; padding: 16px 35px; border-radius: 40px; font-size: 18px; font-weight: 900;
-            cursor: pointer; box-shadow: 0 10px 25px var(--accent-glow);
-            text-transform: uppercase; letter-spacing: 1px; transition: transform 0.2s;
-            width: 100%; max-width: 300px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-        .start-btn:active { transform: scale(0.95); }
-
-        /* Searching Radar Screen */
-        .radar-screen { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0; }
-        .radar {
-            width: 100px; height: 100px; border-radius: 50%;
-            border: 3px solid var(--accent); position: relative;
-            box-shadow: 0 0 20px var(--accent-glow); margin-bottom: 20px;
-        }
-        .radar::after {
-            content: ''; position: absolute; top: 50%; left: 50%;
-            width: 50%; height: 2px; background: var(--accent);
-            transform-origin: 0 50%; animation: scan 1.5s linear infinite;
-        }
-        .radar-text { font-size: 16px; font-weight: 700; color: var(--accent); animation: pulse 1s infinite; }
-
-        /* Incoming Call UI */
-        .call-screen { display: none; flex-direction: column; align-items: center; padding: 20px 0; }
-        .caller-avatar {
-            width: 110px; height: 110px; border-radius: 50%; background: #2d3748;
-            border: 4px solid #fff; box-shadow: 0 0 30px rgba(255,255,255,0.2);
-            margin-bottom: 15px; position: relative; overflow: hidden;
-        }
-        /* Fake blurred girl image for caller ID */
-        .caller-avatar img { width: 100%; height: 100%; object-fit: cover; filter: blur(3px); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         
-        .caller-name { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 5px; }
-        .caller-status { font-size: 14px; color: #10b981; margin-bottom: 30px; font-weight: 700; }
-        
-        .call-actions { display: flex; gap: 20px; }
-        .btn-answer { background: #10b981; color: #fff; width: 65px; height: 65px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); animation: shake 1s infinite; }
-        .btn-decline { background: #ef4444; color: #fff; width: 65px; height: 65px; border-radius: 50%; border: none; font-size: 24px; cursor: pointer; opacity: 0.7; }
-
-        /* Fullscreen Blurred Video (Hidden initially) */
-        .video-container {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 50; background: #000; display: none;
-        }
-        .main-video { width: 100%; height: 100%; object-fit: cover; filter: blur(20px) brightness(0.6); transform: scale(1.1); }
-        
-        /* Urgency Popup */
-        #urgency-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
-            z-index: 9999; display: none; justify-content: center; align-items: center; padding: 20px;
-        }
-        .modal-content {
-            background: #ffffff; color: #000; width: 100%; max-width: 360px;
-            border-radius: 20px; padding: 35px 25px; text-align: center;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
-        }
-        .m-title { color: #0ea5e9; font-size: 24px; font-weight: 900; margin-bottom: 12px; }
-        .m-desc { font-size: 15px; color: #4b5563; margin-bottom: 25px; font-weight: 700; }
-        .timer-box { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
-        .digit { background: #e2e8f0; padding: 10px 15px; border-radius: 8px; font-size: 28px; font-weight: 900; color: #334155; }
-        .colon { font-size: 28px; font-weight: 900; color: #94a3b8; display: flex; align-items: center; }
-        .btn-ok {
-            background: linear-gradient(to bottom, #d97706, #92400e); color: #fff;
-            width: 100%; padding: 15px; border: none; border-radius: 30px;
-            font-size: 18px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 20px rgba(217, 119, 6, 0.4);
+        body {
+            background: var(--bg-dark);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 12px;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 0, 127, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 242, 254, 0.15) 0%, transparent 40%);
         }
 
-        @keyframes scan { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px) rotate(-5deg); } 75% { transform: translateX(5px) rotate(5deg); } }
+        .main-card {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 24px 20px;
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 60px rgba(121, 40, 202, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Top Live Bar */
+        .top-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 0, 127, 0.2);
+            border: 1px solid var(--neon-pink);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--neon-pink);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-pink);
+            animation: pulse 1.2s infinite;
+        }
+
+        .online-count {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--neon-cyan);
+        }
+
+        /* Dynamic Headlines */
+        .title {
+            font-size: 22px;
+            font-weight: 900;
+            line-height: 1.35;
+            text-align: center;
+            margin-bottom: 14px;
+            background: var(--gradient-main);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sub-text {
+            font-size: 13.5px;
+            color: #cbd5e1;
+            line-height: 1.6;
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        /* Video / Media Card */
+        .video-box {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            border-radius: 18px;
+            overflow: hidden;
+            margin-bottom: 22px;
+            border: 2px solid rgba(255, 0, 127, 0.4);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            cursor: pointer;
+        }
+
+        .video-element {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: blur(22px) brightness(0.65);
+            transform: scale(1.1);
+        }
+
+        .video-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%);
+            padding: 15px;
+            text-align: center;
+        }
+
+        .caller-tag {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .action-pulse-btn {
+            background: var(--btn-glow);
+            background-size: 200% auto;
+            color: #fff;
+            padding: 14px 28px;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(255, 0, 127, 0.6);
+            animation: glow 2s infinite, pulseBtn 1.5s infinite;
+        }
+
+        /* Multi Option Selection (High Engagement) */
+        .choice-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--neon-cyan);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .opt-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 12px 10px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .opt-btn:hover, .opt-btn:active {
+            background: rgba(255, 0, 127, 0.2);
+            border-color: var(--neon-pink);
+            transform: translateY(-2px);
+        }
+
+        /* Giant Main CTA */
+        .main-cta {
+            width: 100%;
+            background: var(--gradient-main);
+            color: #fff;
+            padding: 18px;
+            border: none;
+            border-radius: 40px;
+            font-size: 18px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 10px 35px rgba(255, 0, 127, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.2s;
+        }
+
+        .main-cta:active {
+            transform: scale(0.97);
+        }
+
+        /* Floating Connect Loader Overlay */
+        #loader-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 5, 27, 0.95);
+            z-index: 999;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--neon-pink);
+            border-right: 4px solid var(--neon-cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 800;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Animations */
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.8); } }
+        @keyframes pulseBtn { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes glow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <!-- Main Content Phase 1 -->
-    <div class="content-box" id="phase-1">
-        <h1 class="headline">Sex Video Chat – Live On Your Mobile! Chat With Random Adult Girls In <span>Private Rooms</span></h1>
+    <div class="main-card">
         
-        <p class="description">Looking for a way to enjoy sexy video calls anytime, anywhere? With Arousr, you can connect instantly with real women for private 1 on 1 sex call sessions, no matter where you are. Whether you're on mobile, tablet, or desktop, our platform makes it easy to meet sexy girls ready for fun, flirtation, and erotic conversation in our secure chat rooms.</p>
-        
-        <button class="start-btn" onclick="startRadar()">
-            🎥 Start Private Chat
-        </button>
-    </div>
-
-    <!-- Radar Phase 2 -->
-    <div class="content-box radar-screen" id="phase-2">
-        <div class="radar"></div>
-        <div class="radar-text">Searching for girls nearby...</div>
-    </div>
-
-    <!-- Incoming Call Phase 3 -->
-    <div class="content-box call-screen" id="phase-3">
-        <div class="caller-avatar">
-            <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=200&q=80" alt="Caller">
-        </div>
-        <div class="caller-name">Guest_F92</div>
-        <div class="caller-status">Incoming Video Call...</div>
-        
-        <div class="call-actions">
-            <button class="btn-decline" onclick="startRadar()">✖</button>
-            <button class="btn-answer" onclick="answerCall()">📞</button>
-        </div>
-    </div>
-
-    <!-- Blurred Video Container Phase 4 -->
-    <div class="video-container" id="phase-4">
-        <video class="main-video" id="bg-vid" autoplay loop muted playsinline>
-            <source src="https://github.com/abir84095-cyber/newc/raw/refs/heads/main/1.mp4" type="video/mp4">
-        </video>
-    </div>
-
-    <!-- Urgency Popup Modal (The Ultimate Trap) -->
-    <div id="urgency-modal">
-        <div class="modal-content">
-            <div class="m-title">ATTENTION!</div>
-            <div class="m-desc">Free VIP registration is going to end in:</div>
-            
-            <div class="timer-box">
-                <div class="digit" id="m1">0</div>
-                <div class="digit" id="m2">4</div>
-                <div class="colon">:</div>
-                <div class="digit" id="s1">4</div>
-                <div class="digit" id="s2">1</div>
+        <!-- Live Status Bar -->
+        <div class="top-status">
+            <div class="live-badge">
+                <div class="pulse-dot"></div>
+                Live Cam Session
             </div>
+            <div class="online-count">🟢 4,281 Girls Online</div>
+        </div>
 
-            <!-- আপনার CPA অফার লিংক -->
-            <button class="btn-ok" onclick="window.location.href='https://trk.mitegirl.store/s/6F4UUGPNA3?p=123'">
-                OK, VERIFY NOW
+        <!-- Headline -->
+        <h1 class="title">Sex Video Chat – Live On Your Mobile!</h1>
+
+        <!-- Description -->
+        <p class="sub-text">
+            Looking for a way to enjoy sexy video calls anytime, anywhere? Connect instantly with real women for private 1-on-1 sex call sessions. Meet girls ready for fun, flirtation, and erotic conversation in secure private rooms.
+        </p>
+
+        <!-- Video Box with Blur effect -->
+        <div class="video-box" onclick="connectOffer()">
+            <video class="video-element" autoplay loop muted playsinline>
+                <source src="https://github.com/abir84095-cyber/newc/raw/refs/heads/main/1.mp4" type="video/mp4">
+            </video>
+            <div class="video-overlay">
+                <div class="caller-tag">🔥 Private Call Ready</div>
+                <button class="action-pulse-btn">
+                    🎥 Tap To Unlock Stream
+                </button>
+            </div>
+        </div>
+
+        <!-- Interactive Engagement Grid -->
+        <div class="choice-title">Select Your Preferred Experience:</div>
+        <div class="options-grid">
+            <button class="opt-btn" onclick="connectOffer()">
+                🔞 1-on-1 Video Sex
+            </button>
+            <button class="opt-btn" onclick="connectOffer()">
+                💬 Private Dirty Chat
             </button>
         </div>
+
+        <!-- Mastermind Direct CTA -->
+        <button class="main-cta" onclick="connectOffer()">
+            🔥 Connect To Private Room
+        </button>
+
+    </div>
+
+    <!-- Smooth Redirect Loader -->
+    <div id="loader-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Connecting To Private Cam...</div>
     </div>
 
     <script>
-        function startRadar() {
-            document.getElementById('phase-1').style.display = 'none';
-            document.getElementById('phase-3').style.display = 'none';
-            document.getElementById('phase-2').style.display = 'flex';
+        const offerLink = 'https://trk.mitegirl.store/s/GQC8JWJDS7?p=123';
 
-            // ৩ সেকেন্ড রাডার ঘুরবে, তারপর কল আসবে
+        function connectOffer() {
+            // শো লোডার অ্যানিমেশন (যাতে ইউজার মনে করে লাইভ কনেক্ট হচ্ছে)
+            document.getElementById('loader-overlay').style.display = 'flex';
+            
+            // হালকা ভাইব্রেশন ফিডব্যাক (মোবাইলের জন্য)
+            if (navigator.vibrate) {
+                navigator.vibrate(80);
+            }
+
+            // ০.৪ সেকেন্ডের মধ্যে অফার লিংকে ডাইরেক্ট রিডাইরেক্ট (লিড মিস হওয়ার সুযোগ ০%)
             setTimeout(() => {
-                document.getElementById('phase-2').style.display = 'none';
-                document.getElementById('phase-3').style.display = 'flex';
-                // ইনকামিং কলের হালকা ভাইব্রেশন (মোবাইল ডিভাইসের জন্য)
-                if (navigator.vibrate) navigator.vibrate([500, 500, 500]);
-            }, 3000);
-        }
-
-        function answerCall() {
-            document.getElementById('phase-3').style.display = 'none';
-            document.getElementById('phase-4').style.display = 'block';
-
-            // কল রিসিভ করার ১.৫ সেকেন্ড পর ভেরিফিকেশন পপআপ আসবে
-            setTimeout(() => {
-                document.getElementById('urgency-modal').style.display = 'flex';
-                startTimer();
-            }, 1500);
-        }
-
-        function startTimer() {
-            let totalSeconds = 4 * 60 + 41; // 4 mins 41 secs
-            let timerInterval = setInterval(() => {
-                if(totalSeconds <= 0) { clearInterval(timerInterval); return; }
-                totalSeconds--;
-                let m = Math.floor(totalSeconds / 60);
-                let s = totalSeconds % 60;
-                let mStr = m.toString().padStart(2, '0');
-                let sStr = s.toString().padStart(2, '0');
-
-                document.getElementById('m1').innerText = mStr[0];
-                document.getElementById('m2').innerText = mStr[1];
-                document.getElementById('s1').innerText = sStr[0];
-                document.getElementById('s2').innerText = sStr[1];
-            }, 1000);
+                window.location.href = offerLink;
+            }, 400);
         }
     </script>
 </body>
